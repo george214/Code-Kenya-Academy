@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { findLesson } from '@/data/courses';
+import { checkCodePractice, findLesson } from '@/data/courses';
 import { useLearning } from '@/context/LearningContext';
 import {
   IconAction,
@@ -15,13 +15,20 @@ import {
 import { useColors } from '@/hooks/useColors';
 
 export default function LessonScreen() {
-  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const found = findLesson(id);
+  return <LessonContent key={id} lessonId={id} />;
+}
+
+function LessonContent({ lessonId }: { lessonId: string }) {
+  const colors = useColors();
+  const found = findLesson(lessonId);
   const { progress, completeLesson, isReady } = useLearning();
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [practiceCode, setPracticeCode] = useState(found?.lesson.practice.starter ?? '');
+  const [isPracticeCorrect, setIsPracticeCorrect] = useState(false);
+  const [practiceFeedback, setPracticeFeedback] = useState('');
   const completed = new Set(progress.completedLessonIds);
 
   if (!isReady) return null;
@@ -57,6 +64,12 @@ export default function LessonScreen() {
     );
   }
 
+  const checkPractice = () => {
+    const result = checkCodePractice(lesson.practice, practiceCode);
+    setIsPracticeCorrect(result.isCorrect);
+    setPracticeFeedback(result.feedback);
+  };
+
   const checkAnswer = () => {
     if (selectedAnswer === null) {
       setFeedback('Choose an answer first.');
@@ -67,8 +80,17 @@ export default function LessonScreen() {
       setFeedback(lesson.explanation);
     } else {
       setIsCorrect(false);
-      setFeedback('Not quite. Take another look at the lesson, then try again.');
+      setFeedback('Not quite yet. Re-read the example, then choose another answer.');
     }
+  };
+
+  const updatePracticeCode = (value: string) => {
+    setPracticeCode(value);
+    setIsPracticeCorrect(false);
+    setPracticeFeedback('');
+    setSelectedAnswer(null);
+    setIsCorrect(false);
+    setFeedback('');
   };
 
   const continueLesson = async () => {
@@ -81,7 +103,7 @@ export default function LessonScreen() {
   };
 
   return (
-    <Screen>
+    <Screen keyboard>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 17 }}>
         <IconAction icon="arrow-left" label="Back to course" onPress={() => router.back()} testID="back-from-lesson" />
         <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.8, flexShrink: 1, textAlign: 'right' }}>
@@ -135,86 +157,175 @@ export default function LessonScreen() {
         </View>
       ) : (
         <>
-          <View style={{ marginTop: 24, marginBottom: 12 }}>
+          <View style={{ marginTop: 24, marginBottom: 11 }}>
             <Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1.2 }}>
-              QUICK CHECK
+              GUIDED PRACTICE
             </Text>
             <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 19, lineHeight: 25, marginTop: 7 }}>
-              {lesson.question}
+              {lesson.practice.instruction}
             </Text>
           </View>
-          <View style={{ gap: 9 }}>
-            {lesson.answers.map((answer, answerIndex) => {
-              const selected = selectedAnswer === answerIndex;
-              const correctChoice = isCorrect && answerIndex === lesson.correctAnswer;
-              return (
-                <Pressable
-                  key={answer}
-                  testID={`answer-${answerIndex}`}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  disabled={isCorrect}
-                  onPress={() => {
-                    setSelectedAnswer(answerIndex);
-                    setFeedback('');
-                  }}
-                  style={({ pressed }) => ({
-                    minHeight: 53,
-                    borderWidth: 1,
-                    borderColor: correctChoice ? colors.success : selected ? colors.primary : colors.border,
-                    backgroundColor: correctChoice ? colors.successSoft : selected ? colors.secondary : colors.card,
-                    borderRadius: 15,
-                    paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 10,
-                    opacity: pressed ? 0.8 : 1,
-                  })}
-                >
-                  <View style={{ width: 23, height: 23, borderRadius: 8, borderWidth: 1, borderColor: correctChoice ? colors.success : selected ? colors.primary : colors.border, alignItems: 'center', justifyContent: 'center' }}>
-                    {correctChoice ? <Feather name="check" size={14} color={colors.primary} /> : null}
-                  </View>
-                  <Text style={{ color: colors.foreground, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 19, flex: 1 }}>
-                    {answer}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19, marginBottom: 11 }}>
+            Hint: {lesson.practice.hint}
+          </Text>
+          <TextInput
+            testID="practice-code-input"
+            accessibilityLabel="Editable practice code"
+            value={practiceCode}
+            onChangeText={updatePracticeCode}
+            multiline
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            textAlignVertical="top"
+            selectionColor={colors.accent}
+            style={{
+              backgroundColor: colors.codeSurface,
+              borderColor: colors.border,
+              borderWidth: 1,
+              borderRadius: 16,
+              color: colors.codeText,
+              fontFamily: 'monospace',
+              fontSize: 13,
+              lineHeight: 21,
+              minHeight: 142,
+              padding: 14,
+            }}
+          />
+          <View style={{ marginTop: 12 }}>
+            <PrimaryButton
+              title={isPracticeCorrect ? 'Check my code again' : 'Check my code'}
+              icon={isPracticeCorrect ? 'check-circle' : 'code'}
+              onPress={checkPractice}
+              testID="check-practice"
+            />
           </View>
-          {feedback ? (
+          {practiceFeedback ? (
             <View
               accessibilityRole="alert"
               style={{
-                backgroundColor: isCorrect ? colors.successSoft : colors.warningSoft,
+                backgroundColor: isPracticeCorrect ? colors.successSoft : colors.warningSoft,
                 padding: 13,
                 borderRadius: 14,
                 marginTop: 12,
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                gap: 9,
               }}
             >
-              <Text style={{ color: colors.foreground, fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 19 }}>
-                {feedback}
+              <Feather
+                name={isPracticeCorrect ? 'check-circle' : 'info'}
+                size={17}
+                color={isPracticeCorrect ? colors.success : colors.warning}
+                style={{ marginTop: 1 }}
+              />
+              <Text style={{ color: colors.foreground, fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 19, flex: 1 }}>
+                {practiceFeedback}
               </Text>
             </View>
           ) : null}
-          <View style={{ marginTop: 14 }}>
-            {isCorrect ? (
-              <PrimaryButton
-                title={nextLesson ? 'Complete lesson and continue' : 'Finish path and view certificate'}
-                icon={nextLesson ? 'arrow-right' : 'award'}
-                onPress={continueLesson}
-                testID="complete-lesson"
-              />
-            ) : (
-              <PrimaryButton
-                title="Check my answer"
-                icon="check"
-                disabled={selectedAnswer === null}
-                onPress={checkAnswer}
-                testID="check-answer"
-              />
-            )}
-          </View>
+
+          {isPracticeCorrect ? (
+            <>
+              <View style={{ marginTop: 24, marginBottom: 12 }}>
+                <Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1.2 }}>
+                  QUICK CHECK
+                </Text>
+                <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 19, lineHeight: 25, marginTop: 7 }}>
+                  {lesson.question}
+                </Text>
+              </View>
+              <View style={{ gap: 9 }}>
+                {lesson.answers.map((answer, answerIndex) => {
+                  const selected = selectedAnswer === answerIndex;
+                  const correctChoice = isCorrect && answerIndex === lesson.correctAnswer;
+                  return (
+                    <Pressable
+                      key={answer}
+                      testID={`answer-${answerIndex}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      disabled={isCorrect}
+                      onPress={() => {
+                        setSelectedAnswer(answerIndex);
+                        setFeedback('');
+                      }}
+                      style={({ pressed }) => ({
+                        minHeight: 53,
+                        borderWidth: 1,
+                        borderColor: correctChoice ? colors.success : selected ? colors.primary : colors.border,
+                        backgroundColor: correctChoice ? colors.successSoft : selected ? colors.secondary : colors.card,
+                        borderRadius: 15,
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 10,
+                        opacity: pressed ? 0.8 : 1,
+                      })}
+                    >
+                      <View style={{ width: 23, height: 23, borderRadius: 8, borderWidth: 1, borderColor: correctChoice ? colors.success : selected ? colors.primary : colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                        {correctChoice ? <Feather name="check" size={14} color={colors.primary} /> : null}
+                      </View>
+                      <Text style={{ color: colors.foreground, fontFamily: 'Inter_500Medium', fontSize: 13, lineHeight: 19, flex: 1 }}>
+                        {answer}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {feedback ? (
+                <View
+                  accessibilityRole="alert"
+                  style={{
+                    backgroundColor: isCorrect ? colors.successSoft : colors.warningSoft,
+                    padding: 13,
+                    borderRadius: 14,
+                    marginTop: 12,
+                  }}
+                >
+                  <Text style={{ color: colors.foreground, fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 19 }}>
+                    {feedback}
+                  </Text>
+                </View>
+              ) : null}
+              <View style={{ marginTop: 14 }}>
+                {isCorrect ? (
+                  <PrimaryButton
+                    title={nextLesson ? 'Complete lesson and continue' : 'Finish path and view certificate'}
+                    icon={nextLesson ? 'arrow-right' : 'award'}
+                    onPress={continueLesson}
+                    testID="complete-lesson"
+                  />
+                ) : (
+                  <PrimaryButton
+                    title="Check my answer"
+                    icon="check"
+                    disabled={selectedAnswer === null}
+                    onPress={checkAnswer}
+                    testID="check-answer"
+                  />
+                )}
+              </View>
+            </>
+          ) : (
+            <View
+              style={{
+                backgroundColor: colors.secondary,
+                borderRadius: 15,
+                padding: 14,
+                marginTop: 20,
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                gap: 9,
+              }}
+            >
+              <Feather name="edit-3" size={16} color={colors.primary} style={{ marginTop: 1 }} />
+              <Text style={{ color: colors.secondaryForeground, fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 19, flex: 1 }}>
+                Finish the code practice to unlock the quick check.
+              </Text>
+            </View>
+          )}
         </>
       )}
     </Screen>

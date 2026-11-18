@@ -1,5 +1,18 @@
 export type CourseIcon = 'code' | 'layout' | 'zap' | 'server' | 'database';
 
+export type PracticeCheck = {
+  snippet: string;
+  hint: string;
+};
+
+export type CodePractice = {
+  instruction: string;
+  starter: string;
+  hint: string;
+  checks: PracticeCheck[];
+  successMessage: string;
+};
+
 export type Lesson = {
   id: string;
   title: string;
@@ -11,7 +24,29 @@ export type Lesson = {
   answers: string[];
   correctAnswer: number;
   explanation: string;
+  practice: CodePractice;
 };
+
+export function checkCodePractice(
+  practice: CodePractice,
+  submission: string,
+): { isCorrect: boolean; feedback: string } {
+  const normalizedSubmission = submission.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (!normalizedSubmission) {
+    return { isCorrect: false, feedback: 'Start by writing a little code in the box.' };
+  }
+
+  const missingCheck = practice.checks.find((check) => {
+    const snippet = check.snippet.toLowerCase().replace(/\s+/g, ' ');
+    return !normalizedSubmission.includes(snippet);
+  });
+
+  if (missingCheck) {
+    return { isCorrect: false, feedback: missingCheck.hint };
+  }
+
+  return { isCorrect: true, feedback: practice.successMessage };
+}
 
 export type Course = {
   id: string;
@@ -47,6 +82,18 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           '<main> identifies the central content of the page. A page should normally have one main element.',
+        practice: {
+          instruction: 'Add a heading and a sentence inside the main section.',
+          starter: '<main>\n  <!-- Add your heading and sentence here -->\n</main>',
+          hint: 'Use <h1> for the page heading and <p> for the sentence.',
+          checks: [
+            { snippet: '<h1>', hint: 'Add an opening <h1> tag for the main heading.' },
+            { snippet: '</h1>', hint: 'Close the heading with </h1>.' },
+            { snippet: '<p>', hint: 'Add a <p> tag for the sentence.' },
+            { snippet: '</p>', hint: 'Close the sentence with </p>.' },
+          ],
+          successMessage: 'Great work. Your page now has a heading and a paragraph.',
+        },
       },
       {
         id: 'html-links',
@@ -65,6 +112,16 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'Good alt text communicates the important information in an image when someone cannot see it.',
+        practice: {
+          instruction: 'Make the club link clear and describe the team photo.',
+          starter: '<a href="/clubs">Add clear link words</a>\n<img src="team.jpg" alt="">',
+          hint: 'Write words that explain where the link goes. Add a short description inside alt quotes.',
+          checks: [
+            { snippet: 'explore school clubs', hint: 'Use clear link words such as “Explore school clubs”.' },
+            { snippet: 'alt="robotics club members"', hint: 'Describe who is in the photo in the alt text.' },
+          ],
+          successMessage: 'Nice work. The link and photo now make sense to more people.',
+        },
       },
       {
         id: 'html-forms',
@@ -83,6 +140,18 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'A clear label tells every learner what a field is for and also improves keyboard and screen-reader access.',
+        practice: {
+          instruction: 'Connect a name label to a text input.',
+          starter: '<!-- Add a label and a text input -->',
+          hint: 'Give both the label’s for and the input’s id the same value: student-name.',
+          checks: [
+            { snippet: '<label for="student-name">', hint: 'Add a label with for="student-name".' },
+            { snippet: 'your name</label>', hint: 'Give the label words that tell someone what to enter.' },
+            { snippet: '<input id="student-name"', hint: 'Give the input id="student-name" to connect it.' },
+            { snippet: 'type="text"', hint: 'Set the input type to text.' },
+          ],
+          successMessage: 'That label and input are connected and ready to use.',
+        },
       },
     ],
   },
@@ -112,6 +181,17 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'The selector h1 targets HTML heading elements. The declarations inside the braces describe their appearance.',
+        practice: {
+          instruction: 'Style the event title with a green colour and a larger size.',
+          starter: '.event-title {\n  /* Add two style rules */\n}',
+          hint: 'The property names are color and font-size. Put a colon after each name.',
+          checks: [
+            { snippet: '.event-title {', hint: 'Keep the .event-title selector so the right text is chosen.' },
+            { snippet: 'color:', hint: 'Add a color property inside the braces.' },
+            { snippet: 'font-size:', hint: 'Add a font-size property inside the braces.' },
+          ],
+          successMessage: 'Well done. Your CSS now chooses and styles the event title.',
+        },
       },
       {
         id: 'css-box-model',
@@ -126,6 +206,16 @@ export const courses: Course[] = [
         correctAnswer: 1,
         explanation:
           'Padding adds breathing room inside the border. Margin adds space outside it.',
+        practice: {
+          instruction: 'Give the event card 16 pixels inside and 12 pixels outside.',
+          starter: '.event-card {\n  /* Add padding and margin */\n}',
+          hint: 'Use padding for inside space and margin for outside space.',
+          checks: [
+            { snippet: 'padding: 16px', hint: 'Add padding: 16px for space inside the card.' },
+            { snippet: 'margin: 12px', hint: 'Add margin: 12px for space outside the card.' },
+          ],
+          successMessage: 'You used padding inside and margin outside the card.',
+        },
       },
       {
         id: 'css-responsive',
@@ -144,6 +234,16 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'min-width: 700px applies the enclosed styles when the viewport is 700 pixels wide or wider.',
+        practice: {
+          instruction: 'Let the card fill a phone, then limit it on wider screens.',
+          starter: '.event-card {\n  width: 100%;\n}\n\n/* Add a 700px media query with a max-width rule */',
+          hint: 'Start with @media (min-width: 700px), then set max-width inside it.',
+          checks: [
+            { snippet: '@media (min-width: 700px)', hint: 'Add a media query for screens at least 700 pixels wide.' },
+            { snippet: 'max-width:', hint: 'Set a max-width for the card inside the media query.' },
+          ],
+          successMessage: 'Great. The card can adapt from a phone to a wider screen.',
+        },
       },
     ],
   },
@@ -169,6 +269,17 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'const makes it clear that the variable name will keep referring to the same value.',
+        practice: {
+          instruction: 'Create a route name and count the seats after one person sits down.',
+          starter: "const route = 'Kasarani to town';\nlet seatsLeft = 12;\n// Update seatsLeft by one",
+          hint: 'Use let for the number that changes, then subtract 1 from seatsLeft.',
+          checks: [
+            { snippet: "const route = 'Kasarani to town'", hint: 'Keep the route in a const variable.' },
+            { snippet: 'let seatsleft = 12', hint: 'Create seatsLeft with let because its value changes.' },
+            { snippet: 'seatsleft = seatsleft - 1', hint: 'Subtract one and store the new value in seatsLeft.' },
+          ],
+          successMessage: 'Good job. The route stays the same and the seat count changes.',
+        },
       },
       {
         id: 'js-decisions',
@@ -187,6 +298,18 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'The code inside the if block runs when its condition evaluates to true.',
+        practice: {
+          instruction: 'Show a lower fare for a student and a standard fare for others.',
+          starter: 'const isStudent = true;\n\n// Add an if / else decision',
+          hint: 'Check isStudent. Use showFare(50) in if and showFare(80) in else.',
+          checks: [
+            { snippet: 'if (isstudent)', hint: 'Start with if (isStudent) to check the value.' },
+            { snippet: 'showfare(50)', hint: 'Show 50 inside the student if block.' },
+            { snippet: 'else', hint: 'Add an else block for everyone else.' },
+            { snippet: 'showfare(80)', hint: 'Show 80 inside the else block.' },
+          ],
+          successMessage: 'Your program now picks the right fare for each situation.',
+        },
       },
       {
         id: 'js-functions',
@@ -201,6 +324,17 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'The function multiplies the fare by the number of rides: 50 × 4 = 200.',
+        practice: {
+          instruction: 'Write a function that multiplies a fare by the number of rides.',
+          starter: 'function totalFare(fare, rides) {\n  // Return the total cost\n}\n\nconst cost = totalFare(50, 4);',
+          hint: 'Return fare * rides so the function gives back the total.',
+          checks: [
+            { snippet: 'function totalfare(fare, rides)', hint: 'Create a function named totalFare with fare and rides inputs.' },
+            { snippet: 'return fare * rides', hint: 'Return fare multiplied by rides.' },
+            { snippet: 'totalfare(50, 4)', hint: 'Try the function with 50 and 4.' },
+          ],
+          successMessage: 'That function can now work out the total cost of several rides.',
+        },
       },
     ],
   },
@@ -226,6 +360,18 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'echo outputs text from PHP. The server can include that output in the HTML sent to a browser.',
+        practice: {
+          instruction: 'Use PHP to welcome everyone to the science club.',
+          starter: '<?php\n  // Write a welcome message\n?>',
+          hint: 'Use echo, then put the message inside quotation marks.',
+          checks: [
+            { snippet: '<?php', hint: 'Start the PHP block with <?php.' },
+            { snippet: 'echo', hint: 'Use echo to write text in the response.' },
+            { snippet: 'welcome to the science club', hint: 'Include a welcome to the science club.' },
+            { snippet: '?>', hint: 'Close the PHP block with ?>.' },
+          ],
+          successMessage: 'Nice. PHP can now send the club welcome to the page.',
+        },
       },
       {
         id: 'php-variables',
@@ -240,6 +386,18 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'PHP variables start with $. The dot joins strings together in this example.',
+        practice: {
+          instruction: 'Save a learner’s name and use it in a greeting.',
+          starter: '<?php\n  // Create $name and greet the learner\n?>',
+          hint: 'Start the variable with $. Join the greeting and name with a dot.',
+          checks: [
+            { snippet: '$name = "amina"', hint: 'Create a $name variable and give it a name.' },
+            { snippet: 'echo', hint: 'Use echo to send the greeting.' },
+            { snippet: '.', hint: 'Use a dot to join the greeting text and $name.' },
+            { snippet: '$name', hint: 'Use $name in the greeting so it can be personalised.' },
+          ],
+          successMessage: 'Your greeting can now use the learner’s name.',
+        },
       },
       {
         id: 'php-decisions',
@@ -258,6 +416,18 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'Because the name is empty, the condition is false and PHP runs the else block.',
+        practice: {
+          instruction: 'Show a personal greeting when a name is given, or a general one otherwise.',
+          starter: '<?php\n  // Add an if / else check for $name\n?>',
+          hint: 'Check that $name is not an empty string, then add an else message.',
+          checks: [
+            { snippet: 'if ($name !== "")', hint: 'Check that $name is different from an empty string.' },
+            { snippet: 'echo', hint: 'Use echo to show a greeting.' },
+            { snippet: 'else', hint: 'Add an else block for when the name is empty.' },
+            { snippet: 'hello, learner', hint: 'Give the else block a simple general greeting.' },
+          ],
+          successMessage: 'The page now has a greeting for both situations.',
+        },
       },
     ],
   },
@@ -283,6 +453,17 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'Each row is one record. The columns define the fields stored for that record.',
+        practice: {
+          instruction: 'Create a members table with an id and a name.',
+          starter: '-- Add the members table and its two columns',
+          hint: 'Use CREATE TABLE members, then add id and name inside parentheses.',
+          checks: [
+            { snippet: 'create table members', hint: 'Start with CREATE TABLE members.' },
+            { snippet: 'id int primary key', hint: 'Add an id column that is an INT PRIMARY KEY.' },
+            { snippet: 'name varchar(80)', hint: 'Add a name column that can hold up to 80 characters.' },
+          ],
+          successMessage: 'You made a table with a clear place for each member’s details.',
+        },
       },
       {
         id: 'mysql-read',
@@ -297,6 +478,16 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'SELECT reads the columns you name from the table after FROM.',
+        practice: {
+          instruction: 'Read the name and club columns from the members table.',
+          starter: '-- Write a query for member names and clubs',
+          hint: 'Name both columns after SELECT and the table after FROM.',
+          checks: [
+            { snippet: 'select name, club', hint: 'Select both name and club.' },
+            { snippet: 'from members', hint: 'Read those columns FROM members.' },
+          ],
+          successMessage: 'Your query now asks for exactly the member details you need.',
+        },
       },
       {
         id: 'mysql-filter',
@@ -315,6 +506,17 @@ export const courses: Course[] = [
         correctAnswer: 0,
         explanation:
           'WHERE filters the results, so only matching coding-club records are returned.',
+        practice: {
+          instruction: 'Find the names of members in the science club.',
+          starter: 'SELECT name\nFROM members\n-- Add a filter for the Science club',
+          hint: 'Add WHERE club = followed by the club name in single quotes.',
+          checks: [
+            { snippet: 'select name', hint: 'Ask for the member name with SELECT name.' },
+            { snippet: 'from members', hint: 'Read the records FROM members.' },
+            { snippet: "where club = 'science'", hint: "Filter with WHERE club = 'Science'." },
+          ],
+          successMessage: 'Your WHERE clause now keeps only science-club members.',
+        },
       },
     ],
   },
