@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Code Campus KE",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon_2.png",
+    "scheme": "mobile",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/icon_2.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F6F0"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {},
+    "web": {
+      "favicon": "./assets/images/icon_2.png",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
