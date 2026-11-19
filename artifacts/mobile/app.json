@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Code Campus KE",
-    "slug": "mobile",
+    "name": "Light Code Camp",
+    "slug": "lightcodecamp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon_2.png",
-    "scheme": "mobile",
+    "scheme": "lightcodecamp",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/icon_2.png",
@@ -13,9 +13,12 @@
       "backgroundColor": "#F7F6F0"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.lightcodecamp.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.lightcodecamp.app"
+    },
     "web": {
       "favicon": "./assets/images/icon_2.png",
       "output": "static"
